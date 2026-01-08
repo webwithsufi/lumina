@@ -88,12 +88,13 @@
         }
     </style>
 <script>
-    // Polyfill for process.env used in the browser environment
-    window.process = {
-        env: {
-            API_KEY: "" // Will be injected or handled by the hosting provider
-        }
-    };
+    // Polyfill for process.env safely to avoid overwriting production variables
+    window.process = window.process || {};
+    window.process.env = window.process.env || {};
+    // Ensure API_KEY is defined but don't overwrite if it already exists
+    if (typeof window.process.env.API_KEY === 'undefined') {
+        window.process.env.API_KEY = "";
+    }
 </script>
 <script type="importmap">
 {

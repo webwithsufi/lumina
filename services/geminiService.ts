@@ -17,10 +17,16 @@ If asked about something outside of college advice, politely redirect to academi
 `;
 
 export const getGeminiResponse = async (userMessage: string) => {
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey === "") {
+    console.error("Lumina Advisor Error: API_KEY is missing from environment variables.");
+    return "The advisor system is not configured correctly. Please ensure the API_KEY is set in your hosting provider's dashboard.";
+  }
+
   try {
     // Correct initialization using the process.env.API_KEY directly as required.
-    // Creating a new instance inside the function ensures it uses the most current environment state.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: userMessage,
@@ -30,7 +36,11 @@ export const getGeminiResponse = async (userMessage: string) => {
       },
     });
 
-    let text = response.text || "I'm sorry, I couldn't process that. Please try again.";
+    if (!response || !response.text) {
+      throw new Error("Empty response received from Gemini API");
+    }
+
+    let text = response.text;
     
     // Robust cleanup to ensure no Markdown characters leak through
     const cleanText = text
@@ -40,8 +50,18 @@ export const getGeminiResponse = async (userMessage: string) => {
       .trim();
 
     return cleanText;
-  } catch (error) {
-    console.error("Gemini Error:", error);
+  } catch (error: any) {
+    // Log the full error to the console for easier debugging by the developer
+    console.error("Lumina Advisor - Gemini API Error:", {
+      message: error.message,
+      status: error.status,
+      error
+    });
+
+    if (error.message?.includes("API key not valid")) {
+      return "The advisor is currently offline due to an invalid API key configuration.";
+    }
+
     return "The academic advisor is currently busy. Please check back shortly.";
   }
 };
