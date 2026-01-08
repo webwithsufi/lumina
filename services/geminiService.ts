@@ -19,6 +19,7 @@ If asked about something outside of college advice, politely redirect to academi
 export const getGeminiResponse = async (userMessage: string) => {
   try {
     // Correct initialization using the process.env.API_KEY directly as required.
+    // Creating a new instance inside the function ensures it uses the most current environment state.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -31,10 +32,7 @@ export const getGeminiResponse = async (userMessage: string) => {
 
     let text = response.text || "I'm sorry, I couldn't process that. Please try again.";
     
-    // Robust cleanup to ensure no Markdown characters (like asterisks) leak through
-    // 1. Remove double asterisks (bold)
-    // 2. Remove single asterisks (italics/bullets)
-    // 3. Remove hashtags (headers)
+    // Robust cleanup to ensure no Markdown characters leak through
     const cleanText = text
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')

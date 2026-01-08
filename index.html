@@ -87,6 +87,14 @@
             background: #94a3b8;
         }
     </style>
+<script>
+    // Polyfill for process.env used in the browser environment
+    window.process = {
+        env: {
+            API_KEY: "" // Will be injected or handled by the hosting provider
+        }
+    };
+</script>
 <script type="importmap">
 {
   "imports": {
@@ -102,5 +110,7 @@
 </head>
 <body class="bg-slate-50 text-slate-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
     <div id="root"></div>
+    <!-- Explicitly load the application entry point -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
