@@ -88,10 +88,14 @@
         }
     </style>
 <script>
-    // Polyfill for process.env safely to avoid overwriting production variables
-    window.process = window.process || {};
-    window.process.env = window.process.env || {};
-    // Ensure API_KEY is defined but don't overwrite if it already exists
+    // Polyfill for process.env safely
+    if (typeof window.process === 'undefined') {
+        window.process = { env: {} };
+    } else if (typeof window.process.env === 'undefined') {
+        window.process.env = {};
+    }
+    
+    // Default to empty string if API_KEY is missing, but do not overwrite
     if (typeof window.process.env.API_KEY === 'undefined') {
         window.process.env.API_KEY = "";
     }

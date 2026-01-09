@@ -20,16 +20,15 @@ export const getGeminiResponse = async (userMessage: string) => {
   const apiKey = process.env.API_KEY;
 
   if (!apiKey || apiKey === "") {
-    console.error("Lumina Advisor Error: API_KEY is missing from environment variables.");
-    return "The advisor system is not configured correctly. Please ensure the API_KEY is set in your hosting provider's dashboard.";
+    console.error("Lumina Advisor Configuration Error: API_KEY is missing.");
+    return "Advisor Configuration Error: No API key found. Please ensure API_KEY is set in your Vercel Project Settings.";
   }
 
   try {
-    // Correct initialization using the process.env.API_KEY directly as required.
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: userMessage,
+      contents: [{ parts: [{ text: userMessage }] }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7,
@@ -37,10 +36,10 @@ export const getGeminiResponse = async (userMessage: string) => {
     });
 
     if (!response || !response.text) {
-      throw new Error("Empty response received from Gemini API");
+      throw new Error("The API returned an empty or invalid response.");
     }
 
-    let text = response.text;
+    const text = response.text;
     
     // Robust cleanup to ensure no Markdown characters leak through
     const cleanText = text
@@ -51,17 +50,19 @@ export const getGeminiResponse = async (userMessage: string) => {
 
     return cleanText;
   } catch (error: any) {
-    // Log the full error to the console for easier debugging by the developer
-    console.error("Lumina Advisor - Gemini API Error:", {
-      message: error.message,
-      status: error.status,
-      error
-    });
+    // Improved error logging to avoid [object Object] in consoles
+    const errorMsg = error?.message || "Unknown error occurred";
+    console.error("Lumina Advisor - Gemini API Error Message:", errorMsg);
+    console.error("Lumina Advisor - Full Error Context:", error);
 
-    if (error.message?.includes("API key not valid")) {
-      return "The advisor is currently offline due to an invalid API key configuration.";
+    if (errorMsg.includes("API key not valid")) {
+      return "Critical: The provided API Key is invalid. Please check your Google AI Studio settings.";
     }
 
-    return "The academic advisor is currently busy. Please check back shortly.";
+    if (errorMsg.includes("User location is required")) {
+      return "The advisor encountered a location-based error. Please try again.";
+    }
+
+    return `The advisor is currently experiencing an issue: ${errorMsg.substring(0, 60)}... Please try again later.`;
   }
 };
