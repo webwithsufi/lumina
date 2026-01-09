@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumina Institute of Technology</title>
+    <script>
+        // CRITICAL: Polyfill for process.env must run before any other script
+        window.process = window.process || { env: {} };
+        window.process.env = window.process.env || {};
+        // Only set default if not already provided by build tool
+        if (typeof window.process.env.API_KEY === 'undefined') {
+            window.process.env.API_KEY = "";
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -87,19 +96,6 @@
             background: #94a3b8;
         }
     </style>
-<script>
-    // Polyfill for process.env safely
-    if (typeof window.process === 'undefined') {
-        window.process = { env: {} };
-    } else if (typeof window.process.env === 'undefined') {
-        window.process.env = {};
-    }
-    
-    // Default to empty string if API_KEY is missing, but do not overwrite
-    if (typeof window.process.env.API_KEY === 'undefined') {
-        window.process.env.API_KEY = "";
-    }
-</script>
 <script type="importmap">
 {
   "imports": {
@@ -115,7 +111,6 @@
 </head>
 <body class="bg-slate-50 text-slate-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
     <div id="root"></div>
-    <!-- Explicitly load the application entry point -->
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

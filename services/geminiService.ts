@@ -17,15 +17,25 @@ If asked about something outside of college advice, politely redirect to academi
 `;
 
 export const getGeminiResponse = async (userMessage: string) => {
+  // Access the API key from environment variables
   const apiKey = process.env.API_KEY;
 
+  // Diagnostic logging (safe)
+  if (!apiKey) {
+    console.error("Lumina Global Error: process.env.API_KEY is undefined in the browser.");
+  } else {
+    console.log(`Lumina Diagnostic: API Key detected (Length: ${apiKey.length})`);
+  }
+
   if (!apiKey || apiKey === "") {
-    console.error("Lumina Advisor Configuration Error: API_KEY is missing.");
-    return "Advisor Configuration Error: No API key found. Please ensure API_KEY is set in your Vercel Project Settings.";
+    return "Advisor Error: No API key detected. Please verify your Vercel Environment Variables and ensure your build process injects them into the frontend.";
   }
 
   try {
+    // Initialize the Gemini API client
     const ai = new GoogleGenAI({ apiKey });
+    
+    // Generate content using the recommended model for basic text tasks
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ parts: [{ text: userMessage }] }],
@@ -36,12 +46,11 @@ export const getGeminiResponse = async (userMessage: string) => {
     });
 
     if (!response || !response.text) {
-      throw new Error("The API returned an empty or invalid response.");
+      throw new Error("The AI service returned an empty response.");
     }
 
+    // Clean up the response to remove any accidental markdown
     const text = response.text;
-    
-    // Robust cleanup to ensure no Markdown characters leak through
     const cleanText = text
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
@@ -50,19 +59,32 @@ export const getGeminiResponse = async (userMessage: string) => {
 
     return cleanText;
   } catch (error: any) {
-    // Improved error logging to avoid [object Object] in consoles
-    const errorMsg = error?.message || "Unknown error occurred";
-    console.error("Lumina Advisor - Gemini API Error Message:", errorMsg);
-    console.error("Lumina Advisor - Full Error Context:", error);
-
-    if (errorMsg.includes("API key not valid")) {
-      return "Critical: The provided API Key is invalid. Please check your Google AI Studio settings.";
+    // Robust error message extraction to prevent [object Object]
+    let detailedError = "Unknown Error";
+    
+    if (error instanceof Error) {
+      detailedError = error.message;
+    } else if (typeof error === 'object') {
+      try {
+        detailedError = JSON.stringify(error);
+      } catch (e) {
+        detailedError = "Could not stringify error object";
+      }
+    } else {
+      detailedError = String(error);
     }
 
-    if (errorMsg.includes("User location is required")) {
-      return "The advisor encountered a location-based error. Please try again.";
+    console.error("Lumina Advisor - Gemini API Failure:", detailedError);
+    console.debug("Full Error Object:", error);
+
+    if (detailedError.includes("API key not valid")) {
+      return "The advisor is offline: The provided API Key is invalid or has expired.";
     }
 
-    return `The advisor is currently experiencing an issue: ${errorMsg.substring(0, 60)}... Please try again later.`;
+    if (detailedError.includes("403") || detailedError.includes("permission")) {
+      return "The advisor is offline: Access denied. Check your API key permissions.";
+    }
+
+    return `Advisor is currently unavailable. (Reason: ${detailedError.substring(0, 50)}...)`;
   }
 };

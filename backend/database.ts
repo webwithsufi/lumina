@@ -1,8 +1,10 @@
 
-import { StudentRecord, ActivityLog } from '../services/storageService';
+import { StudentRecord, ActivityLog, CourseRecord, TeacherRecord, TaskRecord, storageService } from '../services/storageService';
 
 const DB_KEYS = {
   STUDENTS: 'lumina_db_students',
+  TEACHERS: 'lumina_db_teachers',
+  TASKS: 'lumina_db_tasks',
   LOGS: 'lumina_db_logs',
   SESSION: 'lumina_db_session'
 };
@@ -23,37 +25,65 @@ class Database {
 
   private init() {
     if (!localStorage.getItem(DB_KEYS.STUDENTS)) {
-      const defaultStudent: StudentRecord = {
-        id: 'L001',
-        name: 'Alex Rivera',
-        email: 'student@lumina.edu',
-        password: 'password123',
-        major: 'Computer Science',
-        gpa: 3.92,
-        attendance: '94%'
-      };
-      localStorage.setItem(DB_KEYS.STUDENTS, JSON.stringify([defaultStudent]));
+      localStorage.setItem(DB_KEYS.STUDENTS, JSON.stringify(storageService.getStudents()));
+    }
+    if (!localStorage.getItem(DB_KEYS.TEACHERS)) {
+      localStorage.setItem(DB_KEYS.TEACHERS, JSON.stringify(storageService.getTeachers()));
+    }
+    if (!localStorage.getItem(DB_KEYS.TASKS)) {
+      localStorage.setItem(DB_KEYS.TASKS, JSON.stringify(storageService.getTasks()));
     }
     if (!localStorage.getItem(DB_KEYS.LOGS)) {
       localStorage.setItem(DB_KEYS.LOGS, JSON.stringify([]));
     }
   }
 
-  // --- Student Methods ---
   async getStudents(): Promise<StudentRecord[]> {
     const data = localStorage.getItem(DB_KEYS.STUDENTS);
     return data ? JSON.parse(data) : [];
   }
 
+  async getTeachers(): Promise<TeacherRecord[]> {
+    const data = localStorage.getItem(DB_KEYS.TEACHERS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  async getTasks(): Promise<TaskRecord[]> {
+    const data = localStorage.getItem(DB_KEYS.TASKS);
+    return data ? JSON.parse(data) : [];
+  }
+
   async saveStudent(student: StudentRecord): Promise<void> {
     const students = await this.getStudents();
-    const index = students.findIndex(s => s.id === student.id || s.email === student.email);
+    const index = students.findIndex(s => s.id === student.id);
     if (index > -1) {
-      students[index] = student;
+      students[index] = { ...students[index], ...student };
     } else {
       students.push(student);
     }
     localStorage.setItem(DB_KEYS.STUDENTS, JSON.stringify(students));
+  }
+
+  async saveTeacher(teacher: TeacherRecord): Promise<void> {
+    const teachers = await this.getTeachers();
+    const index = teachers.findIndex(t => t.id === teacher.id);
+    if (index > -1) {
+      teachers[index] = { ...teachers[index], ...teacher };
+    } else {
+      teachers.push(teacher);
+    }
+    localStorage.setItem(DB_KEYS.TEACHERS, JSON.stringify(teachers));
+  }
+
+  async saveTask(task: TaskRecord): Promise<void> {
+    const tasks = await this.getTasks();
+    const index = tasks.findIndex(t => t.id === task.id);
+    if (index > -1) {
+      tasks[index] = { ...tasks[index], ...task };
+    } else {
+      tasks.push(task);
+    }
+    localStorage.setItem(DB_KEYS.TASKS, JSON.stringify(tasks));
   }
 
   async deleteStudent(id: string): Promise<void> {
@@ -62,7 +92,12 @@ class Database {
     localStorage.setItem(DB_KEYS.STUDENTS, JSON.stringify(filtered));
   }
 
-  // --- Log Methods ---
+  async deleteTeacher(id: string): Promise<void> {
+    const teachers = await this.getTeachers();
+    const filtered = teachers.filter(t => t.id !== id);
+    localStorage.setItem(DB_KEYS.TEACHERS, JSON.stringify(filtered));
+  }
+
   async getLogs(): Promise<ActivityLog[]> {
     const data = localStorage.getItem(DB_KEYS.LOGS);
     return data ? JSON.parse(data) : [];
